@@ -2,7 +2,7 @@
 
 By Casper Hogenboom
 
-Thesis project done on Generation Financial Time-Series with GANs. The project was a collaboration between University Maastricht and Wholesale Banking Advanced Analytics team with ING, Spring 2020.
+Thesis project on generation of Financial Time-Series with GANs. The project was a collaboration between University Maastricht and Wholesale Banking Advanced Analytics team with ING, Spring 2020.
 
 This repository is set-up to run on APPL historic price data for which the results are also included. 
 
