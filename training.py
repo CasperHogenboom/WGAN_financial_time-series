@@ -5,10 +5,6 @@ import numpy as np
 from torch.autograd import grad as torch_grad
 from eval import plt_loss, plt_progress, plt_gp, plt_lr
 
-import psutil
-import humanize
-import os
-import GPUtil as gpu
 
 class Trainer():
 
@@ -27,8 +23,7 @@ class Trainer():
         self.use_cuda = use_cuda
         self.conditional = 3
         self.ts_dim = ts_dim
-        #data_load_path = '/opt/app-root/data/data_bucket_week_3s.csv'
-        data_load_path = '/opt/app-root/git_repositories/wgan_plots/data_appl/dataAPPL.csv'
+        data_load_path = '/Users/casperhogenboom/Documents/GitHub/WGAN_financial_time-series/' + 'data/dataAPPL.csv'
         self.data = Data(self.ts_dim, data_load_path)
 
 
@@ -70,9 +65,6 @@ class Trainer():
                     self.losses['D'].append(float(d_loss))
                     self.losses['GP'].append(grad_penalty.item())
                     self.losses['gradient_norm'].append(float(grad_norm_))
-            self.GPUs = gpu.getGPUs()
-            self.gpu = self.GPUs[0]
-            self.printm(epoch)
             
             self.G_opt.zero_grad()
             fake_batch_critic, real_batch_critic, start_prices = self.data.get_samples(G=self.G, latent_dim=self.latent_dim, n=self.batch_size, ts_dim=self.ts_dim,conditional=self.conditional, use_cuda=self.use_cuda)
@@ -83,10 +75,7 @@ class Trainer():
                 self.G.cuda()
             # feed-forward
             d_critic_fake = self.D(fake_batch_critic)
-            d_critic_real = self.D(real_batch_critic)
-            
-            
-            
+
             g_loss =  - d_critic_fake.mean()  # d_critic_real.mean()
             # backprop
             g_loss.backward()
@@ -96,7 +85,7 @@ class Trainer():
 
             # save the loss of feed forward
             self.losses['G'].append(g_loss.item())  # outputs tensor with single value
-
+            print(epoch)
             if (epoch + 1) % self.n_eval == 0:
                 if (epoch+1) % 1000 ==0:
                     plot_num = plot_num+1
@@ -104,7 +93,7 @@ class Trainer():
                 plt_gp(self.losses['gradient_norm'], self.losses['GP'], self.scorepath)
                 plt_lr(self.losses['LR_G'],self.losses['LR_D'], self.scorepath)
             if (epoch + 1) % (10*self.n_eval) == 0:
-                fake_lines, real_lines, start_prices = self.data.get_samples(G=self.G, latent_dim=self.latent_dim, n=4,       ts_dim=self.ts_dim,conditional=self.conditional, use_cuda=self.use_cuda)
+                fake_lines, real_lines, start_prices = self.data.get_samples(G=self.G, latent_dim=self.latent_dim, n=4, ts_dim=self.ts_dim,conditional=self.conditional, use_cuda=self.use_cuda)
                 real_lines = np.squeeze(real_lines.cpu().data.numpy())
                 fake_lines = np.squeeze(fake_lines.cpu().data.numpy())
                 real_lines = np.array([self.data.post_processing(real_lines[i], start_prices[i]) for i in range(real_lines.shape[0])])
@@ -114,8 +103,7 @@ class Trainer():
                 name = 'CWGAN-GP_model_Dense3_concat_fx'
                 torch.save(self.G.state_dict(), self.scorepath + '/gen_' + name + '.pt')
                 torch.save(self.D.state_dict(), self.scorepath + '/dis_' + name + '.pt')    
-            #if (epoch + 1) % 9000 == 0:
-            #    distribution_hist(self.G, self.latent_dim, self.ts_dim, self.use_cuda, self.scorepath, epoch)
+
 
 
     def _grad_penalty(self, real_data, gen_data):
@@ -147,9 +135,3 @@ class Trainer():
         #gradients = gradients.cpu()
         # comment: precision is lower than grad_norm (think that is double) and gradients_norm is float
         return self.gp_weight * (torch.max(torch.zeros(1,dtype=torch.double).cuda() if self.use_cuda else torch.zeros(1,dtype=torch.double), gradients_norm.mean() - 1) ** 2), gradients_norm.mean().item()
-    
-    def printm(self,epoch):
-        process = psutil.Process(os.getpid())
-        print(epoch)
-        print("GPU Ram free: {0:.0f}MB | Used: {1:.0f}MB | Util {2:3.0f}% | Total {3:.0f}MB ".format(self.gpu.memoryFree, self.gpu.memoryUsed, self.gpu.memoryUtil*100, self.gpu.memoryTotal))       
-        

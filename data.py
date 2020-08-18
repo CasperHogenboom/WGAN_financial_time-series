@@ -24,33 +24,17 @@ class Data(object):
     def init_all(self):
         self.get_scalar()
         self.store_price()
-        self.bid_return = self.preprocessing(self.data['Close']) #Price_bid
+        self.bid_return = self.preprocessing(self.data['Close'])
         
         self.store_dates()
         self.data_augment()
     
     def store_price(self):
-        self.bid = self.data['Close'].to_numpy() #Price_bid
+        self.bid = self.data['Close'].to_numpy()
         
     def store_dates(self):
-        self.dates = pd.to_datetime(self.data['date']) #bucket
-        
-    def get_dates_feature(self,idx):
-        months = np.empty((len(idx),1))
-        days= np.empty((len(idx),1))
-        hours= np.empty((len(idx),1))
-        minutes= np.empty((len(idx),1))
-        sec= np.empty((len(idx),1))
-        
-        for i in range(len(idx)):
-            
-            months[i] = (pd.to_datetime(self.dates_aug[idx[i],0]).month)/12
-            days[i] = (pd.to_datetime(self.dates_aug[idx[i],0]).day)/31
-            hours[i] = (pd.to_datetime(self.dates_aug[idx[i],0]).hour)/24
-            minutes[i] = (pd.to_datetime(self.dates_aug[idx[i],0]).minute)/60
-            sec[i] = (pd.to_datetime(self.dates_aug[idx[i],0]).second)/60
-        
-        return torch.from_numpy(months), torch.from_numpy(days), torch.from_numpy(hours), torch.from_numpy(minutes), torch.from_numpy(sec)
+        self.dates = pd.to_datetime(self.data['date'])
+
         
     def get_scalar(self):
         self.scalar = StandardScaler()
@@ -75,9 +59,9 @@ class Data(object):
 
     
     def data_augment(self):
-        self.bid_return_aug = np.array(self.moving_window(self.bid_return, self.length))#12
-        self.bid_aug = np.array(self.moving_window(self.bid, self.length))#12
-        self.dates_aug = np.array(self.moving_window(self.dates, self.length))#12
+        self.bid_return_aug = np.array(self.moving_window(self.bid_return, self.length))
+        self.bid_aug = np.array(self.moving_window(self.bid, self.length))
+        self.dates_aug = np.array(self.moving_window(self.dates, self.length))
         print(self.bid_return_aug.shape)
         
         
@@ -114,8 +98,7 @@ class Data(object):
     def get_samples(self, G, latent_dim, n, ts_dim, conditional, use_cuda):
         noise = torch.randn((n,1,latent_dim))
         idx = np.random.randint(self.bid_return_aug.shape[0], size=n)
-        month, day, hour, minute, sec = self.get_dates_feature(idx)
-        
+
         real_samples = self.bid_return_aug[idx, :]
         
         real_start_prices = self.bid_aug[idx, 0]
@@ -124,12 +107,6 @@ class Data(object):
         
         if conditional>0:
             noise[:,:,:conditional] = real_samples[:,:,:conditional]
-            
-            noise[:,:,conditional+1] = month
-            noise[:,:,conditional+2] = day
-            noise[:,:,conditional+1] = hour
-            #noise[:,:,conditional+4] = minute
-            #noise[:,:,conditional+5] = sec
 
         if use_cuda:
             noise = noise.cuda()
@@ -141,7 +118,6 @@ class Data(object):
         y = y.float()
         
         y = torch.cat((real_samples[:,:,:conditional].float().cpu(),y.float().cpu()), dim=2)
-      
         
         if use_cuda:
             y = y.cuda()

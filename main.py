@@ -6,12 +6,13 @@ from torch.autograd import Variable
 import os
 import datetime
 
-latent_dim = 10 #####50
-ts_dim = 23#12 #33
-conditional=3#2
+latent_dim = 10
+ts_dim = 23
+conditional = 3
 
 time = datetime.datetime.utcnow() + datetime.timedelta(hours = 2)
-scorepath = "/opt/app-root/git_repositories/wgan_gp_fx/output/result_" + str(time.isoformat(timespec='minutes'))
+#TODO: specify your path
+scorepath = "/Users/casperhogenboom/Documents/GitHub/WGAN_financial_time-series"+"/output/result_" + str(time.isoformat(timespec='minutes'))
 
 plot_scorepath = scorepath +"/line_generation"
 if not os.path.exists(scorepath):
@@ -38,8 +39,8 @@ D_opt = optim.RMSprop(discriminator.parameters(), lr=lr_b)
 D_scheduler = optim.lr_scheduler.CyclicLR(D_opt, base_lr = 1e-4, max_lr= 8e-4, step_size_up=100, step_size_down=900, mode ='triangular')
 G_scheduler = optim.lr_scheduler.CyclicLR(G_opt, base_lr = 1e-4, max_lr= 6e-4, step_size_up=100, step_size_down=900, mode ='triangular')
 
-epochs = 25000
-batch_size = 58
+epochs = 5000
+batch_size = 128
 use_cuda = torch.cuda.is_available()
 print(use_cuda)
 

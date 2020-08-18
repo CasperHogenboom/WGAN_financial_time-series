@@ -3,35 +3,33 @@ import torch.nn as nn
 
 
 class Generator(nn.Module):
-    def __init__(self, latent_dim, ts_dim, condition):
+    def __init__(self, latent_dim, ts_dim):
         super(Generator, self).__init__()
 
         self.latent_dim = latent_dim
         self.ts_dim = ts_dim
-        self.condition = condition
 
         self.noise_to_latent = nn.Sequential(
             nn.Linear(self.latent_dim, 50),
             nn.LeakyReLU(inplace=True),
             nn.Linear(50, 200),
-        
             nn.LeakyReLU(inplace=True),
             nn.Linear(200, 512),
-            nn.LeakyReLU(inplace=True),     
-            nn.Linear(512, 10*self.ts_dim),
             nn.LeakyReLU(inplace=True),
-            nn.Linear(10*self.ts_dim, 10*self.ts_dim),
+            nn.Linear(512, 2*self.ts_dim),
             nn.LeakyReLU(inplace=True),
-            nn.Linear(10*self.ts_dim, 10*self.ts_dim),
+            nn.Linear(2*self.ts_dim, 2*self.ts_dim),
             nn.LeakyReLU(inplace=True),
-            nn.Linear(10*self.ts_dim, self.ts_dim-self.condition),
+            nn.Linear(2*self.ts_dim, self.ts_dim),
+            nn.LeakyReLU(inplace=True),
+            nn.Linear(self.ts_dim, self.ts_dim),
             #nn.Tanh()
         )
 
     def forward(self, input_data):
         x = self.noise_to_latent(input_data)
 
-        return x
+        return x[:, None, :]
 
 
 class Discriminator(nn.Module):
@@ -39,19 +37,23 @@ class Discriminator(nn.Module):
         super(Discriminator,self).__init__()
 
         self.ts_dim = ts_dim
+
         self.features_to_score = nn.Sequential(
-            nn.Linear(self.ts_dim, 10*self.ts_dim),
+            nn.Linear(self.ts_dim, 2*self.ts_dim),
             nn.LeakyReLU(inplace=True),
-            nn.Linear(10*self.ts_dim, 512),
+            nn.Linear(2*self.ts_dim, 4*self.ts_dim),
             nn.LeakyReLU(inplace=True),
-            nn.Linear(512, 512),
+            nn.Linear(4*self.ts_dim, 5*self.ts_dim),
             nn.LeakyReLU(inplace=True),
-            nn.Linear(512, 10*self.ts_dim),
+            nn.Linear(5*self.ts_dim, 5*self.ts_dim),
             nn.LeakyReLU(inplace=True),
+            nn.Linear(5*self.ts_dim, 6*self.ts_dim),
+            nn.LeakyReLU(inplace=True),
+            nn.Linear(6*self.ts_dim, 2*self.ts_dim),
+            nn.LeakyReLU(inplace=True),
+            nn.Linear(2*self.ts_dim, 1)
 
-            nn.Linear(10*self.ts_dim, 1)
-
-            #nn.Sigmoid()
+            #nn.Sigmoid() #todo add acitivation or not, whole batch has same activiation?
 
         )
 
